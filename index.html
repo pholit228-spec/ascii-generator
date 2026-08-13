@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Art, GIF & Video Generator v5.6 Standalone</title>
+
+    <style>
+        :root {
+            --bg-color: #121214;
+            --panel-bg: #1e1e24;
+            --input-bg: #2a2a32;
+            --accent-color: #007acc;
+            --accent-hover: #005999;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #33333d;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .dropzone {
+            border: 2px dashed var(--accent-color);
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            background-color: rgba(0, 122, 204, 0.05);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 20px;
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            background-color: rgba(0, 122, 204, 0.15);
+            border-color: #33a0ff;
+        }
+
+        .dropzone input[type="file"] { display: none; }
+
+        .controls-grid {
+            background-color: var(--panel-bg);
+            padding: 20px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        label span {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        input[type="number"], select, input[type="text"] {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+        }
+
+        .checkbox-group {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            gap: 8px;
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .video-controls {
+            background-color: var(--panel-bg);
+            padding: 15px 20px;
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .video-controls.active {
+            display: flex;
+        }
+
+        .time-display {
+            font-family: monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            min-width: 120px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: background 0.2s, transform 0.1s;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        button:hover:not(:disabled) { background-color: var(--accent-hover); }
+        button:active:not(:disabled) { transform: scale(0.98); }
+        button:disabled {
+            background-color: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        #playBtn { background-color: #2e7d32; flex: 0 0 120px; }
+        #playBtn:hover:not(:disabled) { background-color: #216e25; }
+
+        #invertBtn { background-color: #4a4a5a; }
+        #invertBtn:hover:not(:disabled) { background-color: #5a5a6a; }
+
+        #copyBtn { background-color: #0288d1; }
+        #copyBtn:hover:not(:disabled) { background-color: #01579b; }
+
+        #saveTxtBtn { background-color: #d81b60; }
+        #saveTxtBtn:hover:not(:disabled) { background-color: #c2185b; }
+
+        #pyBtn { background-color: #7b1fa2; }
+        #pyBtn:hover:not(:disabled) { background-color: #6a1b9a; }
+
+        .output-container {
+            background-color: #000;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            max-height: 70vh;
+        }
+
+        pre {
+            font-family: "Courier New", Courier, monospace;
+            font-size: 10px;
+            line-height: 1.0;
+            letter-spacing: 0;
+            margin: 0;
+            color: #00ff00;
+            white-space: pre;
+            overflow-x: auto;
+            word-break: keep-all;
+            user-select: text;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: -10px;
+            margin-bottom: 15px;
+        }
+
+        video { display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>ASCII Art, GIF & Video Generator v5.6 (No Dependencies)</h1>
+    
+    <div class="dropzone" id="dropzone">
+        <span id="dropzoneText">📁 Drag and drop an image, GIF, or VIDEO here (PNG, JPG, GIF, MP4, WEBM)</span>
+        <input type="file" id="fileInput" accept="image/*,video/*,.gif">
+    </div>
+
+    <!-- Video Player Control Panel -->
+    <div class="video-controls" id="videoControls">
+        <button id="playBtn">▶ Play</button>
+        <span class="time-display" id="timeDisplay">00:00 / 00:00</span>
+        <label class="checkbox-label" style="margin-left: auto;">
+            <input type="checkbox" id="loopToggle" checked>
+            Loop
+        </label>
+    </div>
+
+    <div class="controls-grid">
+        <label>
+            <span>Character Set:</span>
+            <select id="presetSelect">
+                <option value="blocks">Solid Block (█)</option>
+                <option value="hearts">Hearts (♥)</option>
+                <option value="dots">Dots / Retro Raster (●)</option>
+                <option value="squares">Squares (■)</option>
+                <option value="dense">Detailed ASCII (70 chars)</option>
+                <option value="standard">Standard ASCII (10 chars)</option>
+                <option value="binary">Matrix / Binary (01)</option>
+                <option value="minimal">Minimalist (#.- )</option>
+                <option value="custom">Custom set...</option>
+            </select>
+        </label>
+
+        <label>
+            <span>Custom Palette:</span>
+            <input type="text" id="customCharsInput" value="█">
+        </label>
+
+        <label>
+            <span>Width (characters):</span>
+            <input type="number" id="widthInput" value="80" min="10" max="300">
+        </label>
+        
+        <label>
+            <span>Height (characters):</span>
+            <input type="number" id="heightInput" value="45" min="10" max="300">
+        </label>
+
+        <label>
+            <span>Brightness (-100...100):</span>
+            <input type="number" id="brightnessInput" value="0" min="-100" max="100">
+        </label>
+
+        <label>
+            <span>Contrast (-100...100):</span>
+            <input type="number" id="contrastInput" value="0" min="-100" max="100">
+        </label>
+
+        <div class="checkbox-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="autoHeightToggle" checked>
+                Auto height (preserve aspect ratio)
+            </label>
+
+            <label class="checkbox-label">
+                <input type="checkbox" id="colorToggle" checked>
+                Original colors (HTML/CSS)
+            </label>
+
+            <label class="checkbox-label">
+                <input type="checkbox" id="singleCharToggle" checked>
+                Fill with single character (no spaces)
+            </label>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button id="invertBtn" disabled>Invert Palette</button>
+        <button id="copyBtn" disabled>Copy current frame</button>
+        <button id="saveTxtBtn" disabled>Download .TXT frame</button>
+        <button id="pyBtn" disabled>Download Python (ANSI)</button>
+    </div>
+
+    <div class="hint">Tip: All video and GIF frames are compressed into Base64 (GZIP) on export for minimal file size.</div>
+
+    <div class="output-container">
+        <pre id="asciiOutput">Load an image, GIF, or video file...</pre>
+    </div>
+
+    <video id="hiddenVideo" playsinline muted></video>
+
+    <script>
+        /* =========================================================
+           Embedded Offline GIF Decoder (Zero Dependencies)
+           ========================================================= */
+        class EmbeddedGifDecoder {
+            constructor(arrayBuffer) {
+                this.b = new Uint8Array(arrayBuffer);
+                this.p = 0;
+            }
+
+            readByte() { return this.b[this.p++]; }
+            readUnsigned() {
+                const val = this.b[this.p] | (this.b[this.p + 1] << 8);
+                this.p += 2;
+                return val;
+            }
+
+            decode() {
+                this.p = 0;
+                const sig = String.fromCharCode(...this.b.subarray(0, 6));
+                if (!sig.startsWith('GIF')) throw new Error('Invalid GIF format');
+
+                this.p = 6;
+                const width = this.readUnsigned();
+                const height = this.readUnsigned();
+                const packed = this.readByte();
+                this.p += 2; // bg index & aspect ratio
+
+                let gct = null;
+                if (packed & 0x80) {
+                    const gctSize = 1 << ((packed & 0x07) + 1);
+                    gct = this.b.subarray(this.p, this.p + gctSize * 3);
+                    this.p += gctSize * 3;
+                }
+
+                const frames = [];
+                let gce = { delay: 10, transIdx: -1, disposal: 0 };
+
+                while (this.p < this.b.length) {
+                    const code = this.readByte();
+                    if (code === 0x21) { // Extension
+                        const extType = this.readByte();
+                        if (extType === 0xF9) { // Graphic Control Extension
+                            this.readByte(); // block size
+                            const flags = this.readByte();
+                            gce.disposal = (flags >> 2) & 7;
+                            gce.delay = this.readUnsigned();
+                            if (gce.delay === 0) gce.delay = 10;
+                            gce.transIdx = (flags & 1) ? this.readByte() : -1;
+                            if (!(flags & 1)) this.readByte();
+                            this.readByte(); // terminator
+                        } else {
+                            this.skipSubBlocks();
+                        }
+                    } else if (code === 0x2C) { // Image Descriptor
+                        const x = this.readUnsigned();
+                        const y = this.readUnsigned();
+                        const w = this.readUnsigned();
+                        const h = this.readUnsigned();
+                        const imgPacked = this.readByte();
+
+                        let lct = null;
+                        if (imgPacked & 0x80) {
+                            const lctSize = 1 << ((imgPacked & 0x07) + 1);
+                            lct = this.b.subarray(this.p, this.p + lctSize * 3);
+                            this.p += lctSize * 3;
+                        }
+
+                        const activePalette = lct || gct;
+                        const minCodeSize = this.readByte();
+                        const compressedData = this.readSubBlocks();
+                        const pixels = this.lzwDecode(minCodeSize, compressedData, w * h);
+
+                        frames.push({
+                            x, y, w, h,
+                            pixels,
+                            palette: activePalette,
+                            delay: gce.delay * 10, // ms
+                            disposal: gce.disposal,
+                            transIdx: gce.transIdx
+                        });
+
+                        gce = { delay: 10, transIdx: -1, disposal: 0 };
+                    } else if (code === 0x3B) {
+                        break; // EOF
+                    }
+                }
+
+                return { width, height, frames };
+            }
+
+            skipSubBlocks() {
+                while (true) {
+                    const size = this.readByte();
+                    if (size === 0 || this.p >= this.b.length) break;
+                    this.p += size;
+                }
+            }
+
+            readSubBlocks() {
+                const chunks = [];
+                let total = 0;
+                while (true) {
+                    const size = this.readByte();
+                    if (size === 0 || this.p >= this.b.length) break;
+                    chunks.push(this.b.subarray(this.p, this.p + size));
+                    total += size;
+                    this.p += size;
+                }
+                const out = new Uint8Array(total);
+                let pos = 0;
+                for (const chunk of chunks) {
+                    out.set(chunk, pos);
+                    pos += chunk.length;
+                }
+                return out;
+            }
+
+            lzwDecode(minCodeSize, data, pixelCount) {
+                const clearCode = 1 << minCodeSize;
+                const eoiCode = clearCode + 1;
+                let codeSize = minCodeSize + 1;
+                let mask = (1 << codeSize) - 1;
+
+                const dictionary = [];
+                const resetDict = () => {
+                    dictionary.length = 0;
+                    for (let i = 0; i < clearCode; i++) dictionary[i] = [i];
+                    dictionary[clearCode] = [];
+                    dictionary[eoiCode] = null;
+                };
+
+                resetDict();
+
+                const output = new Uint8Array(pixelCount);
+                let outIdx = 0;
+                let bitBuf = 0;
+                let bitLen = 0;
+                let byteIdx = 0;
+                let prevCode = null;
+
+                while (outIdx < pixelCount && byteIdx < data.length) {
+                    bitBuf |= data[byteIdx++] << bitLen;
+                    bitLen += 8;
+
+                    while (bitLen >= codeSize) {
+                        const code = bitBuf & mask;
+                        bitBuf >>= codeSize;
+                        bitLen -= codeSize;
+
+                        if (code === clearCode) {
+                            codeSize = minCodeSize + 1;
+                            mask = (1 << codeSize) - 1;
+                            resetDict();
+                            prevCode = null;
+                            continue;
+                        }
+                        if (code === eoiCode) break;
+
+                        let entry;
+                        if (code < dictionary.length) {
+                            entry = dictionary[code];
+                        } else if (code === dictionary.length && prevCode !== null) {
+                            entry = [...dictionary[prevCode], dictionary[prevCode][0]];
+                        } else {
+                            break;
+                        }
+
+                        for (let i = 0; i < entry.length && outIdx < pixelCount; i++) {
+                            output[outIdx++] = entry[i];
+                        }
+
+                        if (prevCode !== null && dictionary.length < 4096) {
+                            dictionary.push([...dictionary[prevCode], entry[0]]);
+                            if (dictionary.length === mask + 1 && codeSize < 12) {
+                                codeSize++;
+                                mask = (1 << codeSize) - 1;
+                            }
+                        }
+                        prevCode = code;
+                    }
+                }
+                return output;
+            }
+        }
+
+        /* =========================================================
+           Main Application Logic
+           ========================================================= */
+        const dropzone = document.getElementById('dropzone');
+        const dropzoneText = document.getElementById('dropzoneText');
+        const fileInput = document.getElementById('fileInput');
+        const presetSelect = document.getElementById('presetSelect');
+        const customCharsInput = document.getElementById('customCharsInput');
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const brightnessInput = document.getElementById('brightnessInput');
+        const contrastInput = document.getElementById('contrastInput');
+        const autoHeightToggle = document.getElementById('autoHeightToggle');
+        const colorToggle = document.getElementById('colorToggle');
+        const singleCharToggle = document.getElementById('singleCharToggle');
+        
+        const videoControls = document.getElementById('videoControls');
+        const playBtn = document.getElementById('playBtn');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const loopToggle = document.getElementById('loopToggle');
+        const hiddenVideo = document.getElementById('hiddenVideo');
+
+        const invertBtn = document.getElementById('invertBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const saveTxtBtn = document.getElementById('saveTxtBtn');
+        const pyBtn = document.getElementById('pyBtn');
+        const asciiOutput = document.getElementById('asciiOutput');
+
+        const PRESETS = {
+            blocks: '█',
+            hearts: '♥',
+            dots: '●',
+            squares: '■',
+            standard: '@%#*+=-:. ',
+            dense: '$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrft/\\|()1{}[]?-_+~<>i!lI;:,"^`\'. ',
+            binary: '10 ',
+            minimal: '#.- '
+        };
+
+        let mediaType = null; // 'image' | 'video' | 'gif'
+        let loadedImage = null;
+        let lastAsciiText = '';
+        let lastColorGrid = null;
+        let animFrameId = null;
+
+        // GIF data
+        let gifFrames = []; // [{ canvas, delay }]
+        let currentGifFrame = 0;
+        let gifTimeout = null;
+        let isGifPlaying = false;
+        let gifWidth = 0, gifHeight = 0;
+
+        const FONT_ASPECT_RATIO = 0.5;
+
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        async function handleFile(file) {
+            stopPlayback();
+            const fileUrl = URL.createObjectURL(file);
+
+            if (file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif')) {
+                mediaType = 'gif';
+                dropzoneText.textContent = `⏳ Decoding GIF: ${file.name}...`;
+                try {
+                    await parseAndPrepareGif(file);
+                    videoControls.classList.add('active');
+                    dropzoneText.textContent = `👾 GIF: ${file.name} (${gifWidth}x${gifHeight} px, ${gifFrames.length} frames)`;
+                    enableControls();
+                    updateDimensions();
+                    updateGifTimeDisplay();
+                    renderAsciiFrame();
+                } catch (err) {
+                    alert('Error reading GIF file: ' + err.message);
+                    dropzoneText.textContent = '❌ GIF load error';
+                }
+            } else if (file.type.startsWith('image/')) {
+                mediaType = 'image';
+                videoControls.classList.remove('active');
+                const img = new Image();
+                img.onload = () => {
+                    loadedImage = img;
+                    dropzoneText.textContent = `📷 ${file.name} (${img.width}x${img.height} px)`;
+                    enableControls();
+                    updateDimensions();
+                    renderAsciiFrame();
+                };
+                img.src = fileUrl;
+            } else if (file.type.startsWith('video/')) {
+                mediaType = 'video';
+                videoControls.classList.add('active');
+                hiddenVideo.src = fileUrl;
+                hiddenVideo.onloadedmetadata = () => {
+                    dropzoneText.textContent = `🎥 ${file.name} (${hiddenVideo.videoWidth}x${hiddenVideo.videoHeight} px)`;
+                    enableControls();
+                    updateDimensions();
+                    updateVideoTimeDisplay();
+                    renderAsciiFrame();
+                };
+            }
+        }
+
+        async function parseAndPrepareGif(file) {
+            const buffer = await file.arrayBuffer();
+            const decoder = new EmbeddedGifDecoder(buffer);
+            const parsed = decoder.decode();
+
+            gifWidth = parsed.width;
+            gifHeight = parsed.height;
+            gifFrames = [];
+            currentGifFrame = 0;
+
+            const fullCanvas = document.createElement('canvas');
+            fullCanvas.width = gifWidth;
+            fullCanvas.height = gifHeight;
+            const fullCtx = fullCanvas.getContext('2d');
+
+            for (const frame of parsed.frames) {
+                const patchData = fullCtx.createImageData(frame.w, frame.h);
+                const data = patchData.data;
+                const pixels = frame.pixels;
+                const pal = frame.palette;
+
+                for (let i = 0; i < pixels.length; i++) {
+                    const idx = pixels[i];
+                    if (idx !== frame.transIdx && pal) {
+                        const pi = i * 4;
+                        data[pi] = pal[idx * 3];
+                        data[pi + 1] = pal[idx * 3 + 1];
+                        data[pi + 2] = pal[idx * 3 + 2];
+                        data[pi + 3] = 255;
+                    }
+                }
+
+                const patchCanvas = document.createElement('canvas');
+                patchCanvas.width = frame.w;
+                patchCanvas.height = frame.h;
+                patchCanvas.getContext('2d').putImageData(patchData, 0, 0);
+
+                fullCtx.drawImage(patchCanvas, frame.x, frame.y);
+
+                const snap = document.createElement('canvas');
+                snap.width = gifWidth;
+                snap.height = gifHeight;
+                snap.getContext('2d').drawImage(fullCanvas, 0, 0);
+
+                gifFrames.push({
+                    canvas: snap,
+                    delay: frame.delay || 100
+                });
+
+                if (frame.disposal === 2) {
+                    fullCtx.clearRect(frame.x, frame.y, frame.w, frame.h);
+                }
+            }
+        }
+
+        function enableControls() {
+            invertBtn.disabled = false;
+            copyBtn.disabled = false;
+            saveTxtBtn.disabled = false;
+            pyBtn.disabled = false;
+        }
+
+        /* --- Playback --- */
+        playBtn.addEventListener('click', () => {
+            if (mediaType === 'video') {
+                if (hiddenVideo.paused) {
+                    hiddenVideo.play();
+                    playBtn.textContent = '⏸ Pause';
+                    startVideoLoop();
+                } else {
+                    hiddenVideo.pause();
+                    playBtn.textContent = '▶ Play';
+                    stopVideoLoop();
+                }
+            } else if (mediaType === 'gif') {
+                if (!isGifPlaying) {
+                    isGifPlaying = true;
+                    playBtn.textContent = '⏸ Pause';
+                    playNextGifFrame();
+                } else {
+                    isGifPlaying = false;
+                    playBtn.textContent = '▶ Play';
+                    if (gifTimeout) clearTimeout(gifTimeout);
+                }
+            }
+        });
+
+        function playNextGifFrame() {
+            if (!isGifPlaying || gifFrames.length === 0) return;
+
+            renderAsciiFrame();
+            updateGifTimeDisplay();
+
+            const currentDelay = gifFrames[currentGifFrame].delay || 100;
+            currentGifFrame++;
+
+            if (currentGifFrame >= gifFrames.length) {
+                if (loopToggle.checked) {
+                    currentGifFrame = 0;
+                } else {
+                    currentGifFrame = gifFrames.length - 1;
+                    isGifPlaying = false;
+                    playBtn.textContent = '▶ Play';
+                    return;
+                }
+            }
+
+            gifTimeout = setTimeout(playNextGifFrame, currentDelay);
+        }
+
+        loopToggle.addEventListener('change', () => {
+            hiddenVideo.loop = loopToggle.checked;
+        });
+
+        hiddenVideo.addEventListener('ended', () => {
+            playBtn.textContent = '▶ Play';
+            stopVideoLoop();
+        });
+
+        hiddenVideo.addEventListener('timeupdate', updateVideoTimeDisplay);
+
+        function startVideoLoop() {
+            function loop() {
+                if (!hiddenVideo.paused && !hiddenVideo.ended) {
+                    renderAsciiFrame();
+                    animFrameId = requestAnimationFrame(loop);
+                }
+            }
+            loop();
+        }
+
+        function stopVideoLoop() {
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+        }
+
+        function stopPlayback() {
+            stopVideoLoop();
+            if (gifTimeout) clearTimeout(gifTimeout);
+            isGifPlaying = false;
+            hiddenVideo.pause();
+            playBtn.textContent = '▶ Play';
+        }
+
+        function updateVideoTimeDisplay() {
+            const cur = formatTime(hiddenVideo.currentTime);
+            const dur = formatTime(hiddenVideo.duration || 0);
+            timeDisplay.textContent = `${cur} / ${dur}`;
+        }
+
+        function updateGifTimeDisplay() {
+            timeDisplay.textContent = `Frame ${currentGifFrame + 1} / ${gifFrames.length}`;
+        }
+
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60).toString().padStart(2, '0');
+            const s = Math.floor(sec % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        /* --- Settings --- */
+        presetSelect.addEventListener('change', () => {
+            if (presetSelect.value !== 'custom') {
+                customCharsInput.value = PRESETS[presetSelect.value];
+            }
+            renderAsciiFrame();
+        });
+
+        customCharsInput.addEventListener('input', () => {
+            presetSelect.value = 'custom';
+            renderAsciiFrame();
+        });
+
+        widthInput.addEventListener('input', () => {
+            if (autoHeightToggle.checked) updateDimensions();
+            renderAsciiFrame();
+        });
+
+        heightInput.addEventListener('input', renderAsciiFrame);
+
+        autoHeightToggle.addEventListener('change', () => {
+            heightInput.disabled = autoHeightToggle.checked;
+            if (autoHeightToggle.checked) {
+                updateDimensions();
+                renderAsciiFrame();
+            }
+        });
+
+        brightnessInput.addEventListener('input', renderAsciiFrame);
+        contrastInput.addEventListener('input', renderAsciiFrame);
+        colorToggle.addEventListener('change', renderAsciiFrame);
+        singleCharToggle.addEventListener('change', renderAsciiFrame);
+
+        function updateDimensions() {
+            let origW = 0, origH = 0;
+            if (mediaType === 'image' && loadedImage) {
+                origW = loadedImage.width;
+                origH = loadedImage.height;
+            } else if (mediaType === 'video' && hiddenVideo) {
+                origW = hiddenVideo.videoWidth;
+                origH = hiddenVideo.videoHeight;
+            } else if (mediaType === 'gif' && gifFrames.length) {
+                origW = gifWidth;
+                origH = gifHeight;
+            }
+            if (!origW || !origH) return;
+
+            const w = parseInt(widthInput.value) || 80;
+            const ratio = origH / origW;
+            const calculatedHeight = Math.max(1, Math.round(w * ratio * FONT_ASPECT_RATIO));
+            
+            heightInput.value = calculatedHeight;
+            heightInput.disabled = autoHeightToggle.checked;
+        }
+
+        invertBtn.addEventListener('click', () => {
+            customCharsInput.value = Array.from(customCharsInput.value).reverse().join('');
+            presetSelect.value = 'custom';
+            renderAsciiFrame();
+        });
+
+        /* --- ASCII Rendering --- */
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        function renderAsciiFrame() {
+            let targetSource = null;
+            if (mediaType === 'image') targetSource = loadedImage;
+            else if (mediaType === 'video') targetSource = hiddenVideo;
+            else if (mediaType === 'gif' && gifFrames.length > 0) targetSource = gifFrames[currentGifFrame].canvas;
+
+            if (!targetSource) return;
+
+            const targetWidth = parseInt(widthInput.value) || 80;
+            const targetHeight = parseInt(heightInput.value) || 45;
+            const asciiChars = customCharsInput.value || '█';
+            const charArray = Array.from(asciiChars);
+            const useColor = colorToggle.checked;
+            const useSingleChar = singleCharToggle.checked;
+            const brightnessOffset = parseInt(brightnessInput.value) || 0;
+            const contrastFactor = calculateContrastFactor(parseInt(contrastInput.value) || 0);
+
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+
+            try {
+                ctx.drawImage(targetSource, 0, 0, targetWidth, targetHeight);
+            } catch (e) {
+                return;
+            }
+
+            const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight).data;
+
+            let plainText = '';
+            let htmlText = '';
+            lastColorGrid = [];
+
+            for (let y = 0; y < targetHeight; y++) {
+                let rowPlain = '';
+                let rowHtml = useColor ? '<span>' : '';
+                const gridRow = [];
+
+                for (let x = 0; x < targetWidth; x++) {
+                    const offset = (y * targetWidth + x) * 4;
+                    let r = imgData[offset];
+                    let g = imgData[offset + 1];
+                    let b = imgData[offset + 2];
+
+                    r = applyBrightnessContrast(r, brightnessOffset, contrastFactor);
+                    g = applyBrightnessContrast(g, brightnessOffset, contrastFactor);
+                    b = applyBrightnessContrast(b, brightnessOffset, contrastFactor);
+
+                    let ch;
+                    if (useSingleChar) {
+                        ch = charArray[0] || '█';
+                    } else {
+                        const brightness = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                        const charIndex = Math.min(
+                            charArray.length - 1, 
+                            Math.floor((brightness / 256) * charArray.length)
+                        );
+                        ch = charArray[charIndex];
+                    }
+
+                    rowPlain += ch;
+                    gridRow.push({ ch, r, g, b });
+
+                    if (useColor) {
+                        const htmlChar = ch === ' ' ? '&nbsp;' : (ch === '<' ? '&lt;' : (ch === '>' ? '&gt;' : (ch === '&' ? '&amp;' : ch)));
+                        rowHtml += `<span style="color: rgb(${r},${g},${b});">${htmlChar}</span>`;
+                    }
+                }
+
+                plainText += rowPlain + '\n';
+                if (useColor) {
+                    rowHtml += '</span>\n';
+                    htmlText += rowHtml;
+                }
+                lastColorGrid.push(gridRow);
+            }
+
+            lastAsciiText = plainText;
+
+            if (useColor) {
+                asciiOutput.innerHTML = htmlText;
+            } else {
+                asciiOutput.textContent = plainText;
+            }
+        }
+
+        function calculateContrastFactor(contrast) {
+            return (259 * (contrast + 255)) / (255 * (259 - contrast));
+        }
+
+        function applyBrightnessContrast(value, brightness, contrastFactor) {
+            let newVal = value + brightness;
+            newVal = contrastFactor * (newVal - 128) + 128;
+            return Math.min(255, Math.max(0, Math.round(newVal)));
+        }
+
+        function captureAnsiFromSource(sourceCanvas) {
+            const targetWidth = parseInt(widthInput.value) || 80;
+            const targetHeight = parseInt(heightInput.value) || 45;
+            const asciiChars = customCharsInput.value || '█';
+            const charArray = Array.from(asciiChars);
+            const useSingleChar = singleCharToggle.checked;
+            const brightnessOffset = parseInt(brightnessInput.value) || 0;
+            const contrastFactor = calculateContrastFactor(parseInt(contrastInput.value) || 0);
+
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            ctx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
+
+            const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight).data;
+            const frameLines = [];
+
+            for (let y = 0; y < targetHeight; y++) {
+                let line = '';
+                let curColorKey = null;
+                let buf = '';
+
+                for (let x = 0; x < targetWidth; x++) {
+                    const offset = (y * targetWidth + x) * 4;
+                    let r = applyBrightnessContrast(imgData[offset], brightnessOffset, contrastFactor);
+                    let g = applyBrightnessContrast(imgData[offset + 1], brightnessOffset, contrastFactor);
+                    let b = applyBrightnessContrast(imgData[offset + 2], brightnessOffset, contrastFactor);
+
+                    let ch = useSingleChar ? (charArray[0] || '█') : 
+                        charArray[Math.min(charArray.length - 1, Math.floor(((0.2126 * r + 0.7152 * g + 0.0722 * b) / 256) * charArray.length))];
+
+                    const colorKey = `${r};${g};${b}`;
+                    if (colorKey !== curColorKey) {
+                        if (curColorKey !== null) {
+                            line += `\x1b[38;2;${curColorKey}m${buf}`;
+                        }
+                        curColorKey = colorKey;
+                        buf = ch;
+                    } else {
+                        buf += ch;
+                    }
+                }
+                if (curColorKey !== null) {
+                    line += `\x1b[38;2;${curColorKey}m${buf}`;
+                }
+                line += '\x1b[0m';
+                frameLines.push(line);
+            }
+            return frameLines;
+        }
+
+        /* --- Base64 Compression (GZIP) --- */
+        async function compressFramesToBase64(allFrames) {
+            const jsonStr = JSON.stringify(allFrames);
+            const stream = new Blob([jsonStr]).stream();
+            const compressedStream = stream.pipeThrough(new CompressionStream('gzip'));
+            const response = new Response(compressedStream);
+            const buffer = await response.arrayBuffer();
+            
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            const chunkSize = 0x8000;
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+                binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+            }
+            return btoa(binary);
+        }
+
+        /* --- Export --- */
+        copyBtn.addEventListener('click', async () => {
+            if (!lastAsciiText) return;
+            try {
+                await navigator.clipboard.writeText(lastAsciiText);
+            } catch (err) {
+                const textarea = document.createElement('textarea');
+                textarea.value = lastAsciiText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+            flashButton(copyBtn, 'Copied!');
+        });
+
+        saveTxtBtn.addEventListener('click', () => {
+            if (!lastAsciiText) return;
+            downloadFile(lastAsciiText, 'ascii_frame.txt', 'text/plain;charset=utf-8');
+            flashButton(saveTxtBtn, 'Saved!');
+        });
+
+        pyBtn.addEventListener('click', async () => {
+            if (mediaType === 'image') {
+                if (!lastColorGrid) return;
+                const script = buildPythonStaticScript(lastColorGrid);
+                downloadFile(script, 'ascii_frame.py', 'text/plain;charset=utf-8');
+                flashButton(pyBtn, 'Downloaded!');
+                return;
+            }
+
+            if (mediaType === 'gif' && gifFrames.length > 0) {
+                stopPlayback();
+                pyBtn.disabled = true;
+                const originalText = pyBtn.textContent;
+                pyBtn.textContent = '⏳ Generating GIF frames...';
+
+                const allFrames = [];
+                for (let i = 0; i < gifFrames.length; i++) {
+                    allFrames.push(captureAnsiFromSource(gifFrames[i].canvas));
+                }
+
+                pyBtn.textContent = '⏳ Compressing frames...';
+                const base64Data = await compressFramesToBase64(allFrames);
+
+                const avgDelay = gifFrames.reduce((acc, f) => acc + (f.delay || 100), 0) / gifFrames.length;
+                const calculatedFps = Math.max(1, Math.round(1000 / avgDelay));
+
+                const pythonScript = buildCompressedPythonScript(base64Data, calculatedFps);
+                downloadFile(pythonScript, 'ascii_gif.py', 'text/plain;charset=utf-8');
+
+                pyBtn.disabled = false;
+                pyBtn.textContent = originalText;
+                flashButton(pyBtn, 'Downloaded!');
+                return;
+            }
+
+            if (mediaType === 'video' && hiddenVideo) {
+                stopPlayback();
+                
+                pyBtn.disabled = true;
+                const originalText = pyBtn.textContent;
+
+                const TARGET_FPS = 15;
+                const duration = hiddenVideo.duration;
+                const totalFrames = Math.floor(duration * TARGET_FPS);
+                const allFrames = [];
+
+                for (let i = 0; i < totalFrames; i++) {
+                    hiddenVideo.currentTime = i / TARGET_FPS;
+                    await new Promise(resolve => {
+                        hiddenVideo.onseeked = resolve;
+                    });
+
+                    allFrames.push(captureAnsiFromSource(hiddenVideo));
+                    pyBtn.textContent = `⏳ Frame ${i + 1}/${totalFrames}`;
+                }
+
+                pyBtn.textContent = '⏳ Compressing frames...';
+                const base64Data = await compressFramesToBase64(allFrames);
+                const pythonScript = buildCompressedPythonScript(base64Data, TARGET_FPS);
+                
+                downloadFile(pythonScript, 'ascii_animation.py', 'text/plain;charset=utf-8');
+
+                pyBtn.disabled = false;
+                pyBtn.textContent = originalText;
+                flashButton(pyBtn, 'Downloaded!');
+            }
+        });
+
+        function downloadFile(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function flashButton(btn, text) {
+            const original = btn.textContent;
+            btn.textContent = text;
+            setTimeout(() => {
+                btn.textContent = original;
+            }, 1500);
+        }
+
+        function buildPythonStaticScript(colorGrid) {
+            const lines = [];
+            for (const row of colorGrid) {
+                let line = '';
+                let curColorKey = null;
+                let buf = '';
+                for (const cell of row) {
+                    const colorKey = `${cell.r};${cell.g};${cell.b}`;
+                    if (colorKey !== curColorKey) {
+                        if (curColorKey !== null) {
+                            line += `\x1b[38;2;${curColorKey}m${buf}`;
+                        }
+                        curColorKey = colorKey;
+                        buf = cell.ch;
+                    } else {
+                        buf += cell.ch;
+                    }
+                }
+                if (curColorKey !== null) {
+                    line += `\x1b[38;2;${curColorKey}m${buf}`;
+                }
+                line += '\x1b[0m';
+                lines.push(line);
+            }
+
+            const linesLiteral = lines.map(l => `    ${JSON.stringify(l)},`).join('\n');
+
+            return `#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+lines = [
+${linesLiteral}
+]
+
+def main():
+    import sys
+    if sys.platform == "win32":
+        import os
+        os.system('') 
+    
+    for line in lines:
+        print(line)
+
+if __name__ == "__main__":
+    main()
+`;
+        }
+
+        function buildCompressedPythonScript(base64GzipData, fps = 15) {
+            return `#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import time
+import sys
+import os
+import gzip
+import base64
+import json
+
+FPS = ${fps}
+FRAME_DELAY = 1.0 / FPS
+
+# Compressed and Base64-encoded frame array
+DATA = "${base64GzipData}"
+
+def load_frames():
+    raw_gzip = base64.b64decode(DATA)
+    json_bytes = gzip.decompress(raw_gzip)
+    return json.loads(json_bytes.decode('utf-8'))
+
+def main():
+    if sys.platform == "win32":
+        os.system('')
+    
+    sys.stdout.write("Unpacking frames...\\r")
+    sys.stdout.flush()
+    frames = load_frames()
+
+    # Clear screen and hide cursor
+    sys.stdout.write("\\033[2J\\033[H\\033[?25l")
+    sys.stdout.flush()
+
+    try:
+        while True:
+            for frame in frames:
+                t0 = time.time()
+                # \\033[H - return to top, \\033[0J - clear to end of screen
+                output = "\\033[H\\033[0J" + "\\n".join(frame) + "\\033[0m\\n"
+                sys.stdout.write(output)
+                sys.stdout.flush()
+                
+                delta = time.time() - t0
+                time.sleep(max(0.0, FRAME_DELAY - delta))
+    except KeyboardInterrupt:
+        # Restore cursor and reset styles on exit (Ctrl+C)
+        sys.stdout.write("\\033[?25h\\033[0m\\n")
+        sys.stdout.flush()
+        print("Playback stopped.")
+
+if __name__ == "__main__":
+    main()
+`;
+        }
+    </script>
+</body>
+  </html>
